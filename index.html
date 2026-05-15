@@ -406,7 +406,7 @@
     padding: 0.75rem 1rem;
     border: 1px solid var(--stone-light);
     border-radius: 3px;
-    background: var(--parchment);
+    background: var(--parchment-dark);
     color: var(--ink);
     width: 100%;
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -466,6 +466,8 @@
     padding: 0;
     accent-color: var(--gold-dark);
     cursor: pointer;
+    appearance: auto;
+    -webkit-appearance: checkbox;
   }
 
   .checkbox-item span {
@@ -864,8 +866,8 @@
   }, { threshold: 0.1 });
   fadeEls.forEach(el => observer.observe(el));
 
-  // Form submit handler (replace with your form service endpoint)
-  function handleSubmit() {
+  // Form submit handler — Web3Forms
+  async function handleSubmit() {
     const fname = document.getElementById('fname').value.trim();
     const email = document.getElementById('email').value.trim();
     const background = document.getElementById('background').value;
@@ -876,11 +878,50 @@
       return;
     }
 
-    // TODO: Replace with your form endpoint (Formspree, Netlify Forms, etc.)
-    // fetch('https://formspree.io/f/YOUR_ID', { method: 'POST', body: new FormData(...) })
+    const btn = document.querySelector('.submit-btn');
+    btn.textContent = 'Submitting…';
+    btn.disabled = true;
 
-    document.getElementById('form-content').style.display = 'none';
-    document.getElementById('success-msg').style.display = 'block';
+    // Collect checked loan types
+    const loanTypes = [...document.querySelectorAll('input[name="loan_type"]:checked')]
+      .map(cb => cb.nextElementSibling.textContent.trim())
+      .join(', ') || 'None selected';
+
+    const experience = document.getElementById('experience').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+
+    const formData = {
+      access_key: 'dcf78723-f2d5-4e34-bc23-6de7602ee6c7',
+      subject: 'New Expression of Interest — Pacific Investment Group',
+      from_name: fname + ' ' + document.getElementById('lname').value.trim(),
+      email: email,
+      phone: phone || 'Not provided',
+      background: background,
+      experience: experience || 'Not provided',
+      loan_types: loanTypes,
+      accredited: accredited
+    };
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const result = await response.json();
+      if (result.success) {
+        document.getElementById('form-content').style.display = 'none';
+        document.getElementById('success-msg').style.display = 'block';
+      } else {
+        alert('Something went wrong. Please try again or email us directly.');
+        btn.textContent = 'Submit expression of interest';
+        btn.disabled = false;
+      }
+    } catch (err) {
+      alert('Network error. Please check your connection and try again.');
+      btn.textContent = 'Submit expression of interest';
+      btn.disabled = false;
+    }
   }
 </script>
 </body>
